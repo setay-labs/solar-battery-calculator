@@ -699,6 +699,57 @@
       display: flex;
       justify-content: flex-end;
     }
+
+    /* Portfolio Cross-Linking Bar */
+    .portfolio-bar {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 24px;
+      text-align: center;
+    }
+
+    .portfolio-bar h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .portfolio-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .portfolio-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background-color: var(--card-subtle);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .portfolio-pill:hover {
+      border-color: var(--card-border-focus);
+      background-color: #263449;
+    }
+
+    .portfolio-pill.current {
+      border-color: var(--accent-cyan);
+      background-color: rgba(2, 132, 199, 0.15);
+      color: #7dd3fc;
+    }
   </style>
 </head>
 <body>
@@ -908,6 +959,9 @@
           <button type="button" class="btn btn-primary btn-block" id="copySpecsBtn">
             📋 Copy Complete Spec Sheet
           </button>
+          <button type="button" class="btn btn-outline btn-block" id="shareLinkBtn">
+            🔗 Copy Shareable Calculation Link
+          </button>
           <button type="button" class="btn btn-outline btn-block" id="resetDefaultsBtn">
             ↺ Reset to Default Example
           </button>
@@ -943,9 +997,19 @@
     <span>Advertisement &bull; Bottom Display Container</span>
   </div>
 
+  <!-- Portfolio Cross-Linking Bar -->
+  <nav class="portfolio-bar" aria-label="Setay Labs Utility Network">
+    <h3>More Free Calculators &amp; Utilities by Setay Labs</h3>
+    <div class="portfolio-links">
+      <a href="https://setay-labs.github.io/" class="portfolio-pill">🧭 Setay Labs Tool Hub</a>
+      <a href="https://setay-labs.github.io/solar-battery-calculator/" class="portfolio-pill current" aria-current="page">⚡ Solar &amp; Battery Bank Calculator</a>
+      <a href="https://setay-labs.github.io/freelance-hourly-rate-calculator/" class="portfolio-pill">💼 Freelance Hourly &amp; 1099 Rate Calculator</a>
+    </div>
+  </nav>
+
   <!-- Footer with Mandatory AdSense & Compliance Disclosures -->
   <footer>
-    <p>&copy; 2026 Off-Grid Solar & Battery Sizing Calculator &bull; Client-Side Engineering Utility</p>
+    <p>&copy; 2026 <a href="https://setay-labs.github.io/" style="color: #38bdf8; text-decoration: none;">Setay Labs</a> &bull; Off-Grid Solar &amp; Battery Sizing Calculator &bull; 100% Client-Side Utility</p>
     <div class="footer-links">
       <button type="button" class="footer-link-btn" id="openPrivacyBtn">Privacy & Cookie Policy</button>
       <span>&bull;</span>
@@ -1021,8 +1085,45 @@
     var rowChargeController = document.getElementById('rowChargeController');
     var procurementRecommendation = document.getElementById('procurementRecommendation');
     var copySpecsBtn = document.getElementById('copySpecsBtn');
+    var shareLinkBtn = document.getElementById('shareLinkBtn');
     var resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
     var copyToast = document.getElementById('copyToast');
+
+    // Load URL Query Parameters if Shared Link
+    function loadStateFromUrl() {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        if (params.has('v')) systemVoltage.value = params.get('v');
+        if (params.has('chem')) {
+          batteryChemistry.value = params.get('chem');
+          customDodGroup.style.display = (batteryChemistry.value === 'custom') ? 'block' : 'none';
+        }
+        if (params.has('cdod')) customDodInput.value = params.get('cdod');
+        if (params.has('aut')) daysOfAutonomy.value = params.get('aut');
+        if (params.has('inv')) inverterEfficiency.value = params.get('inv');
+        if (params.has('sun')) sunHours.value = params.get('sun');
+        if (params.has('der')) solarDerate.value = params.get('der');
+        if (params.has('loads')) {
+          var rawLoads = params.get('loads').split(';');
+          var parsedLoads = [];
+          rawLoads.forEach(function(entry) {
+            var p = entry.split('|');
+            if (p.length === 3 && p[0]) {
+              parsedLoads.push({
+                name: p[0],
+                watts: safeNum(p[1], 0),
+                hours: safeNum(p[2], 0)
+              });
+            }
+          });
+          if (parsedLoads.length > 0) {
+            loads = parsedLoads;
+          }
+        }
+      } catch (e) {
+        // Ignore malformed URL params
+      }
+    }
 
     // Safe Numeric Parsing
     function safeNum(val, fallback) {
@@ -1269,9 +1370,53 @@
       inverterEfficiency.value = "85";
       sunHours.value = "4.5";
       solarDerate.value = "80";
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
       renderApplianceTable();
       showToast('Reset to default system parameters.');
     });
+
+    // Shareable Calculation URL Action
+    if (shareLinkBtn) {
+      shareLinkBtn.addEventListener('click', function() {
+        var params = new URLSearchParams();
+        params.set('v', systemVoltage.value);
+        params.set('chem', batteryChemistry.value);
+        if (batteryChemistry.value === 'custom') {
+          params.set('cdod', customDodInput.value);
+        }
+        params.set('aut', daysOfAutonomy.value);
+        params.set('inv', inverterEfficiency.value);
+        params.set('sun', sunHours.value);
+        params.set('der', solarDerate.value);
+        var encodedLoads = loads.map(function(item) {
+          return String(item.name || 'Device').replace(/[|;]/g, ' ') + '|' + safeNum(item.watts, 0) + '|' + safeNum(item.hours, 0);
+        }).join(';');
+        if (encodedLoads) {
+          params.set('loads', encodedLoads);
+        }
+
+        var baseUrl = window.location.protocol === 'file:'
+          ? 'https://setay-labs.github.io/solar-battery-calculator/'
+          : (window.location.origin + window.location.pathname);
+        var shareUrl = baseUrl + '?' + params.toString();
+
+        if (window.history && window.history.replaceState && window.location.protocol !== 'file:') {
+          window.history.replaceState({}, document.title, '?' + params.toString());
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(shareUrl).then(function() {
+            showToast('🔗 Shareable calculation link copied!');
+          }).catch(function() {
+            fallbackCopyText(shareUrl);
+          });
+        } else {
+          fallbackCopyText(shareUrl);
+        }
+      });
+    }
 
     // Copy Spec Sheet Action
     copySpecsBtn.addEventListener('click', function() {
@@ -1426,6 +1571,7 @@
     });
 
     // Initial render
+    loadStateFromUrl();
     renderApplianceTable();
 
   })();

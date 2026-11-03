@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://setay-labs.github.io/solar-battery-calculator/sitemap.xml

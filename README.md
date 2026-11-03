@@ -32,7 +32,7 @@ No installation or build steps are required. Simply open `index.html` in any mod
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/solar-battery-calculator.git
+git clone https://github.com/setay-labs/solar-battery-calculator.git
 
 # Open directly in browser
 open index.html # macOS

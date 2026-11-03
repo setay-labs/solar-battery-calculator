@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Calculate your off-grid battery bank capacity (Ah, kWh) and minimum solar panel array wattage based on daily electrical loads, system voltage, and battery chemistry.">
+  <meta name="keywords" content="solar calculator, battery bank sizing, off grid calculator, lifepo4 battery sizing, amp hour calculator, solar panel wattage calculator">
+  <meta name="author" content="Off-Grid Utility Tools">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="./">
+  <title>Off-Grid Solar & Battery Bank Sizing Calculator</title>
+
+  <!-- Open Graph / Social Media Meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Off-Grid Solar & Battery Bank Sizing Calculator">
+  <meta property="og:description" content="Calculate required usable battery capacity (Ah, kWh) and minimum solar array wattage based on real daily appliance loads.">
+  <meta property="og:site_name" content="Off-Grid Sizing Utility">
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Off-Grid Solar & Battery Bank Sizing Calculator">
+  <meta name="twitter:description" content="Calculate required usable battery capacity (Ah, kWh) and minimum solar array wattage based on real daily appliance loads.">
+
+  <!-- Schema.org WebApplication JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Off-Grid Solar & Battery Bank Sizing Calculator",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "All",
+    "browserRequirements": "Requires JavaScript. Requires HTML5.",
+    "description": "Calculate required off-grid battery bank capacity (Ah, kWh) and minimum solar panel array wattage based on daily electrical loads, system voltage, and battery chemistry.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": [
+      "Daily electrical appliance Watt-hour calculation",
+      "LiFePO4 and Lead-Acid Depth of Discharge (DoD) sizing",
+      "12V, 24V, and 48V battery bank capacity in Amp-Hours and kWh",
+      "Solar array wattage sizing based on peak sun hours",
+      "MPPT charge controller amperage recommendations",
+      "One-click copyable equipment specification sheet"
+    ]
+  }
+  </script>
+
+  <!-- Schema.org FAQPage JSON-LD for Search Snippets -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do you calculate battery bank capacity in Amp-Hours?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "To calculate required battery bank capacity: (1) Sum total daily Watt-hours across all appliances. (2) Divide by inverter efficiency (typically 85%). (3) Multiply by desired days of autonomy. (4) Divide by usable Depth of Discharge (85% for LiFePO4, 50% for Lead-Acid). (5) Divide by nominal system voltage (12V, 24V, or 48V) to get Amp-Hours (Ah)."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How many solar panel watts do I need to recharge my battery bank?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Divide your adjusted daily Watt-hour consumption by your location's average daily peak sun hours multiplied by your solar array derating efficiency (typically 80% to account for heat, wiring, and MPPT controller losses)."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the recommended Depth of Discharge for LiFePO4 vs AGM batteries?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "LiFePO4 lithium batteries can be safely discharged to 80% to 90% Depth of Discharge (DoD) for thousands of cycles. In contrast, AGM and flooded lead-acid batteries should not be discharged past 50% DoD to avoid permanent capacity loss."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card-bg: #151f32;
+      --card-subtle: #1e293b;
+      --card-border: #334155;
+      --card-border-focus: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-solar: #f59e0b;
+      --accent-solar-glow: rgba(245, 158, 11, 0.15);
+      --accent-battery: #10b981;
+      --accent-battery-glow: rgba(16, 185, 129, 0.15);
+      --accent-cyan: #0284c7;
+      --btn-primary: #0284c7;
+      --btn-primary-hover: #0369a1;
+      --btn-danger: #ef4444;
+      --btn-danger-hover: #dc2626;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      line-height: 1.5;
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding: 12px 8px;
+    }
+
+    header h1 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* Ad Containers */
+    .ad-container {
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px dashed var(--card-border);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-size: 0.825rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+
+    .ad-top {
+      min-height: 90px;
+      width: 100%;
+    }
+
+    .ad-bottom {
+      min-height: 250px;
+      width: 100%;
+      margin-top: 36px;
+    }
+
+    /* Main Grid Layout */
+    .calc-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    @media (min-width: 992px) {
+      .calc-layout {
+        grid-template-columns: 1.25fr 1fr;
+        align-items: start;
+      }
+    }
+
+    /* Card Containers */
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card-title span.badge {
+      font-size: 0.75rem;
+      background: var(--card-subtle);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-weight: 500;
+    }
+
+    /* Form & Input Groups */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+
+    .hint {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
+      width: 100%;
+      background-color: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      color: #ffffff;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      min-height: 44px;
+    }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    select:focus {
+      border-color: var(--card-border-focus);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    @media (min-width: 540px) {
+      .grid-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* Preset Quick-Add Bar */
+    .preset-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+
+    .preset-bar select {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    /* Appliance Table / List */
+    .appliance-table-wrap {
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+
+    .appliance-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      min-width: 540px;
+    }
+
+    .appliance-table th {
+      text-align: left;
+      padding: 8px 10px;
+      color: var(--text-muted);
+      font-weight: 500;
+      border-bottom: 1px solid var(--card-border);
+      background-color: var(--card-subtle);
+    }
+
+    .appliance-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      vertical-align: middle;
+    }
+
+    .appliance-table input {
+      padding: 6px 8px;
+      font-size: 0.85rem;
+      min-height: 38px;
+    }
+
+    .col-name { width: 34%; }
+    .col-num { width: 18%; }
+    .col-wh { width: 18%; font-weight: 600; color: #38bdf8; text-align: right; }
+    .col-action { width: 12%; text-align: center; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.05s ease;
+      min-height: 44px;
+      text-decoration: none;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background-color: var(--btn-primary);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--btn-primary-hover);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--card-border);
+      color: #cbd5e1;
+    }
+
+    .btn-outline:hover {
+      background-color: var(--card-subtle);
+      color: #ffffff;
+    }
+
+    .btn-danger-icon {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #f87171;
+      border-radius: 4px;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .btn-danger-icon:hover {
+      background-color: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-block {
+      width: 100%;
+    }
+
+    .actions-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    /* Output Summary Sidebar */
+    .sticky-sidebar {
+      position: relative;
+    }
+
+    @media (min-width: 992px) {
+      .sticky-sidebar {
+        position: sticky;
+        top: 16px;
+      }
+    }
+
+    .stat-hero-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    @media (min-width: 480px) {
+      .stat-hero-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .stat-hero-card {
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+    }
+
+    .stat-hero-card.battery {
+      background: linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, var(--card-bg) 100%);
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .stat-hero-card.solar {
+      background: linear-gradient(145deg, rgba(245, 158, 11, 0.08) 0%, var(--card-bg) 100%);
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+
+    .stat-hero-card .label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .stat-hero-card.battery .label { color: var(--accent-battery); }
+    .stat-hero-card.solar .label { color: var(--accent-solar); }
+
+    .stat-hero-card .value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+
+    .stat-hero-card .sub-value {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .breakdown-list {
+      list-style: none;
+      margin: 14px 0;
+    }
+
+    .breakdown-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+      font-size: 0.9rem;
+    }
+
+    .breakdown-item:last-child {
+      border-bottom: none;
+    }
+
+    .breakdown-item .name {
+      color: var(--text-muted);
+    }
+
+    .breakdown-item .val {
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .spec-quote-box {
+      background: var(--card-subtle);
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 14px;
+      border-left: 4px solid var(--accent-cyan);
+      font-size: 0.875rem;
+    }
+
+    .spec-quote-box h4 {
+      font-size: 0.9rem;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+
+    .spec-quote-box p {
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #059669;
+      color: #ffffff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Reference & Formulas Section */
+    .reference-section {
+      margin-top: 24px;
+      border-top: 1px solid var(--card-border);
+      padding-top: 24px;
+    }
+
+    .reference-section details {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 12px;
+    }
+
+    .reference-section summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: #e2e8f0;
+      outline: none;
+    }
+
+    .reference-section .content {
+      margin-top: 12px;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .reference-section code {
+      background: var(--card-subtle);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #38bdf8;
+      font-size: 0.85em;
+    }
+
+    /* Footer & Compliance Links */
+    footer {
+      text-align: center;
+      color: #64748b;
+      font-size: 0.825rem;
+      margin: 36px 0 20px 0;
+      padding-top: 20px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    footer p {
+      margin-bottom: 8px;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-link-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 4px;
+      transition: color 0.15s ease;
+    }
+
+    .footer-link-btn:hover {
+      color: #38bdf8;
+    }
+
+    /* Policy & Compliance Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 2000;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-header h3 {
+      font-size: 1.15rem;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      font-size: 0.875rem;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    .modal-body h4 {
+      color: #38bdf8;
+      margin: 18px 0 6px 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .modal-body h4:first-child {
+      margin-top: 0;
+    }
+
+    .modal-body p {
+      margin-bottom: 12px;
+    }
+
+    .modal-body ul {
+      margin: 8px 0 12px 20px;
+    }
+
+    .modal-body a {
+      color: #38bdf8;
+      text-decoration: underline;
+    }
+
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <h1>
+      <span>⚡ Off-Grid Solar & Battery Bank Sizing Calculator ⚡</span>
+    </h1>
+    <p>Calculate required usable battery capacity (Ah, kWh) and minimum solar array wattage based on real daily appliance loads.</p>
+  </header>
+
+  <!-- Top Ad Container -->
+  <div class="ad-container ad-top" role="complementary" aria-label="Advertisement">
+    <!-- AdSense Placeholder: Top Leaderboard (728x90 / Responsive) -->
+    <span>Advertisement &bull; Top Leaderboard</span>
+  </div>
+
+  <div class="calc-layout">
+    
+    <!-- Left Column: Inputs & Load Builder -->
+    <div class="calc-inputs-col">
+      
+      <!-- Appliance Load Table Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>1. Daily Electrical Loads (AC & DC)</span>
+          <span class="badge" id="loadCounterBadge">4 Appliances</span>
+        </div>
+
+        <!-- Quick Presets -->
+        <div class="preset-bar">
+          <select id="presetSelect" aria-label="Quick-add common appliance preset">
+            <option value="">-- Quick-Add Common Appliance --</option>
+            <option value="12V Compressor Fridge|45|12">12V Compressor Fridge (45W, ~12h cycle)</option>
+            <option value="Starlink Satellite Internet|50|8">Starlink Satellite Dish (50W, 8h)</option>
+            <option value="Laptop Computer|65|6">Laptop Charger (65W, 6h)</option>
+            <option value="LED Interior Lighting (5 bulbs)|25|5">LED Interior Lights (25W total, 5h)</option>
+            <option value="Smartphone Charging (2 phones)|20|3">Smartphone Chargers (20W total, 3h)</option>
+            <option value="CPAP Medical Machine (No Humidifier)|35|8">CPAP Machine - DC (35W, 8h)</option>
+            <option value="MaxxFan / Roof Vent Fan|20|10">12V RV Roof Vent Fan (20W, 10h)</option>
+            <option value="Microwave Oven / Induction Cooker|1000|0.33">Microwave / Induction (1000W, 20 min)</option>
+            <option value="12V Water Pump|60|0.5">Water Pressure Pump (60W, 30 min)</option>
+            <option value="Diesel Air Heater Fan & Pump|25|8">Diesel Air Heater (25W, 8h)</option>
+          </select>
+          <button type="button" class="btn btn-outline" id="addPresetBtn">Add Preset</button>
+        </div>
+
+        <!-- Appliance Table -->
+        <div class="appliance-table-wrap">
+          <table class="appliance-table" id="applianceTable">
+            <thead>
+              <tr>
+                <th class="col-name">Appliance Description</th>
+                <th class="col-num">Power (Watts)</th>
+                <th class="col-num">Hours / Day</th>
+                <th class="col-wh">Daily Wh</th>
+                <th class="col-action">Action</th>
+              </tr>
+            </thead>
+            <tbody id="applianceTbody">
+              <!-- Dynamically populated via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="actions-row">
+          <button type="button" class="btn btn-outline" id="addCustomRowBtn">+ Add Custom Appliance</button>
+          <button type="button" class="btn btn-outline" id="clearAllLoadsBtn">Clear All Loads</button>
+        </div>
+      </div>
+
+      <!-- System Parameters Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>2. Battery Bank & Environmental Parameters</span>
+        </div>
+
+        <div class="grid-2">
+          <!-- System Voltage -->
+          <div class="form-group">
+            <label for="systemVoltage">System Voltage</label>
+            <select id="systemVoltage">
+              <option value="12" selected>12 Volts (Vans, Small RVs, Boats)</option>
+              <option value="24">24 Volts (Large RVs, Mid Off-Grid Cabins)</option>
+              <option value="48">48 Volts (Whole Off-Grid Homes / Workshops)</option>
+            </select>
+            <span class="hint">Higher voltage cuts wire thickness and copper cost.</span>
+          </div>
+
+          <!-- Battery Chemistry & DoD -->
+          <div class="form-group">
+            <label for="batteryChemistry">Battery Chemistry (Usable DoD)</label>
+            <select id="batteryChemistry">
+              <option value="0.85" selected>LiFePO4 Lithium (85% recommended DoD)</option>
+              <option value="0.95">LiFePO4 Lithium Deep (95% DoD max)</option>
+              <option value="0.50">AGM / Gel Sealed Lead-Acid (50% max DoD)</option>
+              <option value="0.50">Flooded Lead-Acid / Deep Cycle (50% max DoD)</option>
+              <option value="custom">Custom Depth of Discharge %</option>
+            </select>
+            <span class="hint">Discharging lead-acid past 50% causes irreversible damage.</span>
+          </div>
+        </div>
+
+        <!-- Custom DoD Field (hidden by default) -->
+        <div class="form-group" id="customDodGroup" style="display: none;">
+          <label for="customDodInput">Custom Usable Depth of Discharge (%)</label>
+          <input type="number" id="customDodInput" min="10" max="100" step="1" value="85" placeholder="85">
+        </div>
+
+        <div class="grid-2">
+          <!-- Days of Autonomy -->
+          <div class="form-group">
+            <label for="daysOfAutonomy">Days of Autonomy (Backup Days)</label>
+            <input type="number" id="daysOfAutonomy" min="1" max="7" step="0.5" value="1.0" aria-label="Days of autonomy">
+            <span class="hint">Consecutive overcast/rainy days with zero solar input (1.0 = 24h backup).</span>
+          </div>
+
+          <!-- Inverter Efficiency -->
+          <div class="form-group">
+            <label for="inverterEfficiency">Inverter & Conversion Efficiency (%)</label>
+            <input type="number" id="inverterEfficiency" min="60" max="98" step="1" value="85" aria-label="Inverter efficiency percentage">
+            <span class="hint">Standard pure sine wave inverters operate at 85%–90% efficiency.</span>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Peak Sun Hours -->
+          <div class="form-group">
+            <label for="sunHours">Average Daily Peak Sun Hours</label>
+            <input type="number" id="sunHours" min="1" max="10" step="0.1" value="4.5" aria-label="Average peak sun hours">
+            <span class="hint">Winter: 2.5–3.5h | Spring/Fall: 4.0–4.5h | Summer/Desert: 5.5–6.5h</span>
+          </div>
+
+          <!-- Solar System Derate Factor -->
+          <div class="form-group">
+            <label for="solarDerate">Solar Array Efficiency / Derate Factor (%)</label>
+            <input type="number" id="solarDerate" min="50" max="95" step="1" value="80" aria-label="Solar array efficiency factor">
+            <span class="hint">Accounts for dust, wire resistance, MPPT loss, and heat derating (80% typical).</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Results & Procurement Specs -->
+    <div class="calc-results-col sticky-sidebar">
+      
+      <!-- Primary Output Card -->
+      <div class="card" id="resultsCard">
+        <div class="card-title">
+          <span>Sizing Results & Procurement Specs</span>
+          <span class="badge" style="color: #38bdf8; border-color: #0284c7;">Real-time</span>
+        </div>
+
+        <!-- Hero Stat Cards -->
+        <div class="stat-hero-grid">
+          <!-- Battery Capacity -->
+          <div class="stat-hero-card battery">
+            <div class="label">Required Battery Bank</div>
+            <div class="value" id="statBatteryAh">0 Ah</div>
+            <div class="sub-value" id="statBatteryKwh">@ 12V (0.00 kWh)</div>
+          </div>
+
+          <!-- Solar Array -->
+          <div class="stat-hero-card solar">
+            <div class="label">Minimum Solar Array</div>
+            <div class="value" id="statSolarWatts">0 W</div>
+            <div class="sub-value" id="statDailySunKwh">Recharge rate per day</div>
+          </div>
+        </div>
+
+        <!-- Detailed Breakdown -->
+        <ul class="breakdown-list">
+          <li class="breakdown-item">
+            <span class="name">Total Raw Daily Load</span>
+            <span class="val" id="rowRawWh">0 Wh / day</span>
+          </li>
+          <li class="breakdown-item">
+            <span class="name">Adjusted Load (Inverter Loss)</span>
+            <span class="val" id="rowAdjustedWh">0 Wh / day</span>
+          </li>
+          <li class="breakdown-item">
+            <span class="name">Total Usable Energy Needed</span>
+            <span class="val" id="rowUsableWh">0 Wh</span>
+          </li>
+          <li class="breakdown-item">
+            <span class="name">Total Nominal Battery Storage</span>
+            <span class="val" id="rowNominalWh">0 Wh</span>
+          </li>
+          <li class="breakdown-item">
+            <span class="name">Recommended MPPT Charge Controller</span>
+            <span class="val" id="rowChargeController">0 A rating</span>
+          </li>
+        </ul>
+
+        <!-- Practical Hardware Match Box -->
+        <div class="spec-quote-box">
+          <h4>📦 Practical Equipment Sizing Guide</h4>
+          <p id="procurementRecommendation">Calculating recommendation...</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions-row" style="margin-top: 18px;">
+          <button type="button" class="btn btn-primary btn-block" id="copySpecsBtn">
+            📋 Copy Complete Spec Sheet
+          </button>
+          <button type="button" class="btn btn-outline btn-block" id="resetDefaultsBtn">
+            ↺ Reset to Default Example
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Reference & Engineering Notes -->
+  <section class="reference-section">
+    <details>
+      <summary>📐 Sizing Formulas & Engineering References</summary>
+      <div class="content">
+        <p>This calculator employs industry-standard off-grid sizing methodology recommended by NABCEP and ABYC standards:</p>
+        <ul style="margin: 8px 0 8px 20px;">
+          <li><strong>Adjusted Daily Load:</strong> <code>Daily Wh ÷ Inverter Efficiency (%)</code></li>
+          <li><strong>Total Usable Battery Wh:</strong> <code>Adjusted Daily Wh × Days of Autonomy</code></li>
+          <li><strong>Total Nominal Battery Wh:</strong> <code>Usable Battery Wh ÷ Usable Depth of Discharge (DoD)</code></li>
+          <li><strong>Battery Bank Capacity (Ah):</strong> <code>Nominal Battery Wh ÷ System Nominal Voltage</code></li>
+          <li><strong>Minimum Solar Panel Watts:</strong> <code>Adjusted Daily Wh ÷ (Peak Sun Hours × Solar Derate Factor)</code></li>
+          <li><strong>MPPT Controller Rating:</strong> <code>Minimum Solar Watts ÷ Nominal Battery Voltage × 1.25 Safety Margin</code></li>
+        </ul>
+        <p><em>Note: For sub-zero winter camping with LiFePO4 batteries, ensure your cells have built-in low-temperature charging protection or heating pads.</em></p>
+      </div>
+    </details>
+  </section>
+
+  <!-- Bottom Ad Container -->
+  <div class="ad-container ad-bottom" role="complementary" aria-label="Advertisement">
+    <!-- AdSense Placeholder: Bottom Rectangle (300x250 / 336x280 / Responsive) -->
+    <span>Advertisement &bull; Bottom Display Container</span>
+  </div>
+
+  <!-- Footer with Mandatory AdSense & Compliance Disclosures -->
+  <footer>
+    <p>&copy; 2026 Off-Grid Solar & Battery Sizing Calculator &bull; Client-Side Engineering Utility</p>
+    <div class="footer-links">
+      <button type="button" class="footer-link-btn" id="openPrivacyBtn">Privacy & Cookie Policy</button>
+      <span>&bull;</span>
+      <button type="button" class="footer-link-btn" id="openTermsBtn">Terms of Use & Disclaimer</button>
+      <span>&bull;</span>
+      <button type="button" class="footer-link-btn" id="openAdDisclosureBtn">Advertising Disclosure</button>
+    </div>
+  </footer>
+
+</div>
+
+<!-- Compliance & Policy Modal -->
+<div class="modal-overlay" id="policyModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="modalTitle">Policies & Disclosures</h3>
+      <button type="button" class="btn-danger-icon" id="closeModalBtn" aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <!-- Populated dynamically via JS -->
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" id="modalCloseActionBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Copy Feedback Toast Notification -->
+<div class="toast" id="copyToast" role="alert" aria-live="polite">
+  ✓ Spec sheet copied to clipboard!
+</div>
+
+<script>
+  (function() {
+    'use strict';
+
+    // Default Appliance Load Dataset
+    var initialLoads = [
+      { name: "12V Compressor Fridge", watts: 45, hours: 12 },
+      { name: "Starlink Satellite Internet", watts: 50, hours: 6 },
+      { name: "Laptop & Phone Charging", watts: 75, hours: 4 },
+      { name: "LED Cabin Lights & Water Pump", watts: 30, hours: 5 }
+    ];
+
+    var loads = JSON.parse(JSON.stringify(initialLoads));
+
+    // DOM Elements
+    var applianceTbody = document.getElementById('applianceTbody');
+    var loadCounterBadge = document.getElementById('loadCounterBadge');
+    var addCustomRowBtn = document.getElementById('addCustomRowBtn');
+    var addPresetBtn = document.getElementById('addPresetBtn');
+    var presetSelect = document.getElementById('presetSelect');
+    var clearAllLoadsBtn = document.getElementById('clearAllLoadsBtn');
+
+    var systemVoltage = document.getElementById('systemVoltage');
+    var batteryChemistry = document.getElementById('batteryChemistry');
+    var customDodGroup = document.getElementById('customDodGroup');
+    var customDodInput = document.getElementById('customDodInput');
+    var daysOfAutonomy = document.getElementById('daysOfAutonomy');
+    var inverterEfficiency = document.getElementById('inverterEfficiency');
+    var sunHours = document.getElementById('sunHours');
+    var solarDerate = document.getElementById('solarDerate');
+
+    // Output Elements
+    var statBatteryAh = document.getElementById('statBatteryAh');
+    var statBatteryKwh = document.getElementById('statBatteryKwh');
+    var statSolarWatts = document.getElementById('statSolarWatts');
+    var statDailySunKwh = document.getElementById('statDailySunKwh');
+    var rowRawWh = document.getElementById('rowRawWh');
+    var rowAdjustedWh = document.getElementById('rowAdjustedWh');
+    var rowUsableWh = document.getElementById('rowUsableWh');
+    var rowNominalWh = document.getElementById('rowNominalWh');
+    var rowChargeController = document.getElementById('rowChargeController');
+    var procurementRecommendation = document.getElementById('procurementRecommendation');
+    var copySpecsBtn = document.getElementById('copySpecsBtn');
+    var resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
+    var copyToast = document.getElementById('copyToast');
+
+    // Safe Numeric Parsing
+    function safeNum(val, fallback) {
+      var n = parseFloat(val);
+      return (isNaN(n) || n < 0) ? (fallback || 0) : n;
+    }
+
+    // Render Appliance Table
+    function renderApplianceTable() {
+      applianceTbody.innerHTML = '';
+      loadCounterBadge.textContent = loads.length + (loads.length === 1 ? ' Appliance' : ' Appliances');
+
+      if (loads.length === 0) {
+        var emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">No appliances added. Choose a preset above or click "+ Add Custom Appliance".</td>';
+        applianceTbody.appendChild(emptyRow);
+        calculateSizing();
+        return;
+      }
+
+      loads.forEach(function(item, idx) {
+        var tr = document.createElement('tr');
+        var dailyWh = Math.round(safeNum(item.watts) * safeNum(item.hours));
+
+        tr.innerHTML = 
+          '<td><input type="text" value="' + escapeHtml(item.name) + '" class="input-name" data-index="' + idx + '" aria-label="Appliance description"></td>' +
+          '<td><input type="number" min="0" step="1" value="' + item.watts + '" class="input-watts" data-index="' + idx + '" aria-label="Power in watts"></td>' +
+          '<td><input type="number" min="0" max="24" step="0.1" value="' + item.hours + '" class="input-hours" data-index="' + idx + '" aria-label="Daily operating hours"></td>' +
+          '<td class="col-wh">' + dailyWh.toLocaleString() + ' Wh</td>' +
+          '<td class="col-action"><button type="button" class="btn-danger-icon delete-row-btn" data-index="' + idx + '" title="Remove appliance" aria-label="Remove item">&times;</button></td>';
+
+        applianceTbody.appendChild(tr);
+      });
+
+      calculateSizing();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    // Core Calculation Logic
+    function calculateSizing() {
+      // 1. Calculate raw daily load
+      var totalRawWh = 0;
+      loads.forEach(function(item) {
+        totalRawWh += (safeNum(item.watts) * safeNum(item.hours));
+      });
+
+      // 2. Inverter & conversion efficiency
+      var invEffPercent = safeNum(inverterEfficiency.value, 85);
+      var invEff = Math.max(0.5, Math.min(1.0, invEffPercent / 100));
+      var totalAdjustedWh = totalRawWh > 0 ? (totalRawWh / invEff) : 0;
+
+      // 3. Days of autonomy
+      var autonomy = Math.max(0.5, safeNum(daysOfAutonomy.value, 1.0));
+      var usableWhNeeded = totalAdjustedWh * autonomy;
+
+      // 4. Depth of discharge (DoD)
+      var dodValue = 0.85;
+      if (batteryChemistry.value === 'custom') {
+        var customVal = safeNum(customDodInput.value, 85);
+        dodValue = Math.max(0.1, Math.min(1.0, customVal / 100));
+      } else {
+        dodValue = parseFloat(batteryChemistry.value) || 0.85;
+      }
+
+      // 5. Total nominal battery bank capacity
+      var totalNominalWh = dodValue > 0 ? (usableWhNeeded / dodValue) : 0;
+      var nominalKwh = totalNominalWh / 1000;
+
+      var voltage = safeNum(systemVoltage.value, 12);
+      var batteryAh = voltage > 0 ? Math.ceil(totalNominalWh / voltage) : 0;
+
+      // 6. Solar Panel Sizing
+      var sunHrs = Math.max(1.0, safeNum(sunHours.value, 4.5));
+      var deratePercent = safeNum(solarDerate.value, 80);
+      var derate = Math.max(0.4, Math.min(1.0, deratePercent / 100));
+
+      // Array Watts needed to replenish daily adjusted energy
+      var minSolarWatts = Math.ceil(totalAdjustedWh / (sunHrs * derate));
+
+      // 7. MPPT Sizing (Watts / Nominal Voltage * 1.25 safety factor)
+      var mpptAmps = Math.ceil((minSolarWatts / voltage) * 1.25);
+
+      // DOM Updates
+      statBatteryAh.textContent = batteryAh.toLocaleString() + ' Ah';
+      statBatteryKwh.textContent = '@ ' + voltage + 'V (' + nominalKwh.toFixed(2) + ' kWh total)';
+      statSolarWatts.textContent = minSolarWatts.toLocaleString() + ' W';
+      statDailySunKwh.textContent = 'Based on ' + sunHrs + ' peak sun hrs';
+
+      rowRawWh.textContent = Math.round(totalRawWh).toLocaleString() + ' Wh / day';
+      rowAdjustedWh.textContent = Math.round(totalAdjustedWh).toLocaleString() + ' Wh / day';
+      rowUsableWh.textContent = Math.round(usableWhNeeded).toLocaleString() + ' Wh';
+      rowNominalWh.textContent = Math.round(totalNominalWh).toLocaleString() + ' Wh (' + nominalKwh.toFixed(2) + ' kWh)';
+      rowChargeController.textContent = mpptAmps + 'A MPPT Controller (minimum)';
+
+      // Procurement Recommendation Text
+      updateProcurementText(voltage, batteryAh, totalNominalWh, minSolarWatts, mpptAmps);
+    }
+
+    function updateProcurementText(voltage, batteryAh, totalNominalWh, minSolarWatts, mpptAmps) {
+      if (batteryAh === 0 || minSolarWatts === 0) {
+        procurementRecommendation.textContent = 'Add your appliances to view recommended commercial battery and solar panel configurations.';
+        return;
+      }
+
+      // Battery recommendation
+      var count100Ah = Math.ceil(batteryAh / 100);
+      var count200Ah = Math.ceil(batteryAh / 200);
+      var batteryMsg = '';
+
+      if (batteryAh <= 150) {
+        batteryMsg = '1x 100Ah–150Ah ' + voltage + 'V battery';
+      } else if (batteryAh <= 250) {
+        batteryMsg = '1x 200Ah or 2x 100Ah ' + voltage + 'V batteries in parallel';
+      } else {
+        batteryMsg = count100Ah + 'x 100Ah or ' + count200Ah + 'x 200Ah ' + voltage + 'V batteries in parallel';
+      }
+
+      // Solar panel recommendation
+      var panels100 = Math.ceil(minSolarWatts / 100);
+      var panels200 = Math.ceil(minSolarWatts / 200);
+      var panels400 = Math.ceil(minSolarWatts / 400);
+
+      var solarMsg = '';
+      if (minSolarWatts <= 300) {
+        solarMsg = panels100 + 'x 100W panels or ' + panels200 + 'x 200W panel';
+      } else if (minSolarWatts <= 800) {
+        solarMsg = panels200 + 'x 200W panels';
+      } else {
+        solarMsg = panels400 + 'x 400W residential-scale panels (or ' + panels200 + 'x 200W)';
+      }
+
+      procurementRecommendation.innerHTML = 
+        '<strong>Battery Pack:</strong> ' + batteryMsg + '<br>' +
+        '<strong>Solar Array:</strong> ' + solarMsg + ' (' + minSolarWatts.toLocaleString() + 'W total)<br>' +
+        '<strong>Charge Controller:</strong> Minimum ' + mpptAmps + ' Amp MPPT controller rated for ' + voltage + 'V.';
+    }
+
+    // Event Handlers for Table Inputs
+    applianceTbody.addEventListener('input', function(e) {
+      var target = e.target;
+      var idx = parseInt(target.getAttribute('data-index'), 10);
+      if (isNaN(idx) || !loads[idx]) return;
+
+      if (target.classList.contains('input-name')) {
+        loads[idx].name = target.value;
+      } else if (target.classList.contains('input-watts')) {
+        loads[idx].watts = safeNum(target.value, 0);
+        updateRowWh(target.closest('tr'), loads[idx]);
+      } else if (target.classList.contains('input-hours')) {
+        loads[idx].hours = safeNum(target.value, 0);
+        updateRowWh(target.closest('tr'), loads[idx]);
+      }
+      calculateSizing();
+    });
+
+    function updateRowWh(tr, item) {
+      if (!tr) return;
+      var cell = tr.querySelector('.col-wh');
+      if (cell) {
+        var dailyWh = Math.round(safeNum(item.watts) * safeNum(item.hours));
+        cell.textContent = dailyWh.toLocaleString() + ' Wh';
+      }
+    }
+
+    // Delete row event
+    applianceTbody.addEventListener('click', function(e) {
+      var btn = e.target.closest('.delete-row-btn');
+      if (!btn) return;
+      var idx = parseInt(btn.getAttribute('data-index'), 10);
+      if (!isNaN(idx) && loads[idx]) {
+        loads.splice(idx, 1);
+        renderApplianceTable();
+      }
+    });
+
+    // Add Preset Button
+    addPresetBtn.addEventListener('click', function() {
+      var val = presetSelect.value;
+      if (!val) return;
+      var parts = val.split('|');
+      if (parts.length === 3) {
+        loads.push({
+          name: parts[0],
+          watts: parseFloat(parts[1]) || 0,
+          hours: parseFloat(parts[2]) || 0
+        });
+        renderApplianceTable();
+        presetSelect.value = '';
+      }
+    });
+
+    // Add Custom Row Button
+    addCustomRowBtn.addEventListener('click', function() {
+      loads.push({
+        name: "New Custom Device",
+        watts: 50,
+        hours: 4
+      });
+      renderApplianceTable();
+    });
+
+    // Clear All Loads Button
+    clearAllLoadsBtn.addEventListener('click', function() {
+      if (confirm('Clear all appliances from the table?')) {
+        loads = [];
+        renderApplianceTable();
+      }
+    });
+
+    // Dropdown / Parameter Change Listeners
+    [systemVoltage, daysOfAutonomy, inverterEfficiency, sunHours, solarDerate].forEach(function(elem) {
+      elem.addEventListener('input', calculateSizing);
+      elem.addEventListener('change', calculateSizing);
+    });
+
+    batteryChemistry.addEventListener('change', function() {
+      if (batteryChemistry.value === 'custom') {
+        customDodGroup.style.display = 'block';
+      } else {
+        customDodGroup.style.display = 'none';
+      }
+      calculateSizing();
+    });
+
+    customDodInput.addEventListener('input', calculateSizing);
+
+    // Reset Defaults
+    resetDefaultsBtn.addEventListener('click', function() {
+      loads = JSON.parse(JSON.stringify(initialLoads));
+      systemVoltage.value = "12";
+      batteryChemistry.value = "0.85";
+      customDodGroup.style.display = 'none';
+      customDodInput.value = "85";
+      daysOfAutonomy.value = "1.0";
+      inverterEfficiency.value = "85";
+      sunHours.value = "4.5";
+      solarDerate.value = "80";
+      renderApplianceTable();
+      showToast('Reset to default system parameters.');
+    });
+
+    // Copy Spec Sheet Action
+    copySpecsBtn.addEventListener('click', function() {
+      var lines = [
+        "=== OFF-GRID SOLAR & BATTERY SIZING SPECIFICATION ===",
+        "",
+        "SYSTEM SIZING TOTALS:",
+        "- Required Battery Capacity: " + statBatteryAh.textContent + " (" + statBatteryKwh.textContent + ")",
+        "- Minimum Solar Array Size: " + statSolarWatts.textContent,
+        "- Recommended Charge Controller: " + rowChargeController.textContent,
+        "",
+        "DAILY ENERGY PROFILE:",
+        "- Total Raw Consumption: " + rowRawWh.textContent,
+        "- Adjusted Consumption (with Inverter Loss): " + rowAdjustedWh.textContent,
+        "- Total Usable Storage Needed: " + rowUsableWh.textContent,
+        "- Total Nominal Storage Needed: " + rowNominalWh.textContent,
+        "",
+        "SYSTEM CONFIGURATION:",
+        "- System Voltage: " + systemVoltage.value + "V",
+        "- Battery Chemistry / DoD: " + (batteryChemistry.value === 'custom' ? (customDodInput.value + '% custom DoD') : (batteryChemistry.options[batteryChemistry.selectedIndex].text)),
+        "- Days of Autonomy: " + daysOfAutonomy.value + " day(s)",
+        "- Inverter Efficiency: " + inverterEfficiency.value + "%",
+        "- Peak Sun Hours: " + sunHours.value + " hrs/day",
+        "- Solar System Efficiency: " + solarDerate.value + "%",
+        "",
+        "APPLIANCE BREAKDOWN:"
+      ];
+
+      loads.forEach(function(item, idx) {
+        var itemWh = Math.round(safeNum(item.watts) * safeNum(item.hours));
+        lines.push((idx + 1) + ". " + item.name + " - " + item.watts + "W x " + item.hours + "h/day = " + itemWh + " Wh/day");
+      });
+
+      lines.push("");
+      lines.push("Generated by Off-Grid Solar & Battery Sizing Calculator");
+
+      var textToCopy = lines.join("\n");
+
+      // Robust Clipboard with fallback
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy).then(function() {
+          showToast('✓ Spec sheet copied to clipboard!');
+        }).catch(function() {
+          fallbackCopyText(textToCopy);
+        });
+      } else {
+        fallbackCopyText(textToCopy);
+      }
+    });
+
+    function fallbackCopyText(text) {
+      var textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showToast('✓ Spec sheet copied to clipboard!');
+      } catch (err) {
+        alert('Unable to copy automatically. Please copy from the results card manually.');
+      }
+      document.body.removeChild(textArea);
+    }
+
+    function showToast(msg) {
+      if (!copyToast) return;
+      copyToast.textContent = msg;
+      copyToast.classList.add('show');
+      setTimeout(function() {
+        copyToast.classList.remove('show');
+      }, 2500);
+    }
+
+    // Modal & Policy Disclosures Logic
+    var policyModal = document.getElementById('policyModal');
+    var modalTitle = document.getElementById('modalTitle');
+    var modalBody = document.getElementById('modalBody');
+    var closeModalBtn = document.getElementById('closeModalBtn');
+    var modalCloseActionBtn = document.getElementById('modalCloseActionBtn');
+    var openPrivacyBtn = document.getElementById('openPrivacyBtn');
+    var openTermsBtn = document.getElementById('openTermsBtn');
+    var openAdDisclosureBtn = document.getElementById('openAdDisclosureBtn');
+
+    var policies = {
+      privacy: {
+        title: "Privacy & Cookie Policy",
+        content: 
+          "<h4>1. Client-Side Data Privacy</h4>" +
+          "<p>This utility runs 100% in your browser. None of your entered electrical appliance specifications, battery configurations, or calculations are ever transmitted, collected, or stored on external servers or databases.</p>" +
+          "<h4>2. Third-Party Advertising & Cookies</h4>" +
+          "<p>We may display advertisements served by third-party advertising partners, including Google AdSense. In compliance with Google AdSense program policies:</p>" +
+          "<ul>" +
+            "<li>Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to this website or other websites on the Internet.</li>" +
+            "<li>Google's use of advertising cookies enables it and its partners to serve ads to users based on their visits to your sites and/or other sites across the web.</li>" +
+            "<li>Users may opt out of personalized advertising by visiting <a href=\"https://adssettings.google.com\" target=\"_blank\" rel=\"noopener noreferrer\">Google Ads Settings</a> or by visiting <a href=\"https://www.aboutads.info\" target=\"_blank\" rel=\"noopener noreferrer\">aboutads.info</a>.</li>" +
+          "</ul>" +
+          "<h4>3. External Links</h4>" +
+          "<p>Our website may contain links to external websites. We do not operate or control third-party sites and are not responsible for their privacy practices.</p>"
+      },
+      terms: {
+        title: "Terms of Use & Engineering Disclaimer",
+        content: 
+          "<h4>1. Informational Sizing Guidance Only</h4>" +
+          "<p>The formulas and sizing estimates provided by this calculator are intended solely for educational, preliminary planning, and rough budgeting purposes. Solar irradiance, battery cell temperature, wire gauge resistance, and inverter idle draw vary significantly between manufacturers and locations.</p>" +
+          "<h4>2. Professional Consultation Required</h4>" +
+          "<p>High-capacity battery systems (particularly lithium chemistry like LiFePO4, AGM, and 48V banks) store significant electrical energy and present potential fire, thermal runaway, and arc flash hazards. Always consult a licensed electrician and adhere strictly to National Electrical Code (NEC Article 690/705/706) and American Boat and Yacht Council (ABYC) safety standards prior to purchasing or energizing physical equipment.</p>" +
+          "<h4>3. Limitation of Liability</h4>" +
+          "<p>This tool is provided \"as is\" without warranties of any kind. Under no circumstances shall the creators or operators be held liable for equipment damage, personal injury, code violations, or unexpected power interruptions resulting from reliance upon these estimates.</p>"
+      },
+      advertising: {
+        title: "Advertising & Monetization Disclosure",
+        content: 
+          "<h4>1. Free Public Access</h4>" +
+          "<p>This web calculator is provided 100% free of charge without paywalls, subscriptions, or required account registrations. To sustain development, maintenance, and high-speed global static hosting, we display programmatic display advertisements.</p>" +
+          "<h4>2. Editorial Independence</h4>" +
+          "<p>Our equipment calculations, solar formulas, and battery capacity recommendations are derived strictly from open mathematical standards (Watts = Volts &times; Amps) and are completely independent of any advertiser or manufacturer affiliations.</p>"
+      }
+    };
+
+    function openModal(policyKey) {
+      var data = policies[policyKey];
+      if (!data) return;
+      modalTitle.textContent = data.title;
+      modalBody.innerHTML = data.content;
+      policyModal.classList.add('active');
+      policyModal.focus();
+    }
+
+    function closeModal() {
+      policyModal.classList.remove('active');
+    }
+
+    if (openPrivacyBtn) openPrivacyBtn.addEventListener('click', function() { openModal('privacy'); });
+    if (openTermsBtn) openTermsBtn.addEventListener('click', function() { openModal('terms'); });
+    if (openAdDisclosureBtn) openAdDisclosureBtn.addEventListener('click', function() { openModal('advertising'); });
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+    if (modalCloseActionBtn) modalCloseActionBtn.addEventListener('click', closeModal);
+
+    // Dismiss modal on backdrop click or ESC key
+    policyModal.addEventListener('click', function(e) {
+      if (e.target === policyModal) closeModal();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && policyModal.classList.contains('active')) {
+        closeModal();
+      }
+    });
+
+    // Initial render
+    renderApplianceTable();
+
+  })();
+</script>
+
+</body>
+</html>

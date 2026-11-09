@@ -750,7 +750,147 @@
       background-color: rgba(2, 132, 199, 0.15);
       color: #7dd3fc;
     }
-  </style>
+  
+    /* === Modern Visual Polish & Micro-Interactions === */
+    .stat-hero-card .value,
+    .breakdown-item .val,
+    .appliance-table input,
+    .dock-summary strong {
+      font-variant-numeric: tabular-nums lining-nums;
+      letter-spacing: -0.02em;
+    }
+
+    /* Segmented Pill Switches */
+    .segmented-control {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      flex-wrap: wrap;
+    }
+
+    .segmented-btn {
+      flex: 1 1 auto;
+      min-height: 38px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .segmented-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .segmented-btn.active {
+      color: #ffffff;
+      background: linear-gradient(145deg, #0284c7 0%, #0369a1 100%);
+      border-color: #38bdf8;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+    }
+
+    /* Capacity Micro-Gauges / Meters */
+    .meter-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 999px;
+      margin-top: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .meter-bar {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .meter-bar.battery-meter {
+      background: linear-gradient(90deg, #059669 0%, #10b981 100%);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    }
+
+    .meter-bar.solar-meter {
+      background: linear-gradient(90deg, #d97706 0%, #f59e0b 100%);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+
+    /* Mobile Quick-Status Dock */
+    .mobile-quick-dock {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .mobile-quick-dock {
+        display: flex;
+        position: fixed;
+        bottom: 12px;
+        left: 12px;
+        right: 12px;
+        z-index: 99;
+        background: rgba(21, 31, 50, 0.92);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        border-radius: 12px;
+        padding: 10px 16px;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      .dock-summary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.88rem;
+        color: #f8fafc;
+      }
+
+      .dock-summary strong {
+        color: #38bdf8;
+      }
+
+      .dock-summary small {
+        color: #94a3b8;
+        font-size: 0.75rem;
+      }
+
+      .dock-sep {
+        color: #475569;
+      }
+
+      .dock-action-btn {
+        background: #0284c7;
+        color: #ffffff;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: background 0.15s ease;
+      }
+
+      .dock-action-btn:hover {
+        background: #0369a1;
+      }
+    }
+
+</style>
 </head>
 <body>
 
@@ -834,6 +974,11 @@
           <!-- System Voltage -->
           <div class="form-group">
             <label for="systemVoltage">System Voltage</label>
+            <div class="segmented-control" role="group" aria-label="System Voltage quick selector" id="voltagePills">
+              <button type="button" class="segmented-btn active" data-val="12">12V System</button>
+              <button type="button" class="segmented-btn" data-val="24">24V System</button>
+              <button type="button" class="segmented-btn" data-val="48">48V System</button>
+            </div>
             <select id="systemVoltage">
               <option value="12" selected>12 Volts (Vans, Small RVs, Boats)</option>
               <option value="24">24 Volts (Large RVs, Mid Off-Grid Cabins)</option>
@@ -845,6 +990,12 @@
           <!-- Battery Chemistry & DoD -->
           <div class="form-group">
             <label for="batteryChemistry">Battery Chemistry (Usable DoD)</label>
+            <div class="segmented-control" role="group" aria-label="Battery Chemistry quick selector" id="chemistryPills">
+              <button type="button" class="segmented-btn active" data-val="lifepo4">LiFePO4 (85%)</button>
+              <button type="button" class="segmented-btn" data-val="agm">AGM (50%)</button>
+              <button type="button" class="segmented-btn" data-val="lead-acid">Lead-Acid (50%)</button>
+              <button type="button" class="segmented-btn" data-val="custom">Custom</button>
+            </div>
             <select id="batteryChemistry">
               <option value="0.85" selected>LiFePO4 Lithium (85% recommended DoD)</option>
               <option value="0.95">LiFePO4 Lithium Deep (95% DoD max)</option>
@@ -914,6 +1065,9 @@
             <div class="label">Required Battery Bank</div>
             <div class="value" id="statBatteryAh">0 Ah</div>
             <div class="sub-value" id="statBatteryKwh">@ 12V (0.00 kWh)</div>
+            <div class="meter-track" aria-hidden="true" title="Estimated battery bank capacity meter">
+              <div class="meter-bar battery-meter" id="batteryMeterFill" style="width: 25%;"></div>
+            </div>
           </div>
 
           <!-- Solar Array -->
@@ -921,6 +1075,9 @@
             <div class="label">Minimum Solar Array</div>
             <div class="value" id="statSolarWatts">0 W</div>
             <div class="sub-value" id="statDailySunKwh">Recharge rate per day</div>
+            <div class="meter-track" aria-hidden="true" title="Estimated solar array output meter">
+              <div class="meter-bar solar-meter" id="solarMeterFill" style="width: 35%;"></div>
+            </div>
           </div>
         </div>
 
@@ -1088,6 +1245,14 @@
     var rowNominalWh = document.getElementById('rowNominalWh');
     var rowChargeController = document.getElementById('rowChargeController');
     var procurementRecommendation = document.getElementById('procurementRecommendation');
+    var batteryMeterFill = document.getElementById('batteryMeterFill');
+    var solarMeterFill = document.getElementById('solarMeterFill');
+    var dockBatteryAh = document.getElementById('dockBatteryAh');
+    var dockVoltage = document.getElementById('dockVoltage');
+    var dockSolarWatts = document.getElementById('dockSolarWatts');
+    var dockJumpBtn = document.getElementById('dockJumpBtn');
+    var voltagePills = document.getElementById('voltagePills');
+    var chemistryPills = document.getElementById('chemistryPills');
     var copySpecsBtn = document.getElementById('copySpecsBtn');
     var shareLinkBtn = document.getElementById('shareLinkBtn');
     var resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
@@ -1272,6 +1437,21 @@
       statBatteryKwh.textContent = '@ ' + voltage + 'V (' + nominalKwh.toFixed(2) + ' kWh total)';
       statSolarWatts.textContent = minSolarWatts.toLocaleString() + ' W';
       statDailySunKwh.textContent = 'Based on ' + sunHrs + ' peak sun hrs';
+
+      // Update Visual Meter Fills
+      if (batteryMeterFill) {
+        var bPct = Math.min(100, Math.max(8, (batteryAh / 400) * 100));
+        batteryMeterFill.style.width = bPct.toFixed(1) + '%';
+      }
+      if (solarMeterFill) {
+        var sPct = Math.min(100, Math.max(8, (minSolarWatts / 1200) * 100));
+        solarMeterFill.style.width = sPct.toFixed(1) + '%';
+      }
+
+      // Update Mobile Quick Dock
+      if (dockBatteryAh) dockBatteryAh.textContent = batteryAh.toLocaleString() + ' Ah';
+      if (dockVoltage) dockVoltage.textContent = '@ ' + voltage + 'V';
+      if (dockSolarWatts) dockSolarWatts.textContent = minSolarWatts.toLocaleString() + ' W';
 
       rowRawWh.textContent = Math.round(totalRawWh).toLocaleString() + ' Wh / day';
       rowAdjustedWh.textContent = Math.round(totalAdjustedWh).toLocaleString() + ' Wh / day';
@@ -1628,6 +1808,17 @@
 
   })();
 </script>
+
+
+  <!-- Mobile Sticky Quick-Status Dock -->
+  <aside class="mobile-quick-dock" id="mobileQuickDock" aria-label="Mobile quick summary">
+    <div class="dock-summary">
+      <span class="dock-item"><strong id="dockBatteryAh">0 Ah</strong> <small id="dockVoltage">@ 12V</small></span>
+      <span class="dock-sep">&bull;</span>
+      <span class="dock-item"><strong id="dockSolarWatts">0 W</strong> <small>Solar</small></span>
+    </div>
+    <a href="#resultsCard" class="dock-action-btn" id="dockJumpBtn">View Specs &darr;</a>
+  </aside>
 
 </body>
 </html>

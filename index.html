@@ -952,6 +952,9 @@
         <div class="spec-quote-box">
           <h4>📦 Practical Equipment Sizing Guide</h4>
           <p id="procurementRecommendation">Calculating recommendation...</p>
+          <div class="affiliate-disclosure-note" style="margin-top: 12px; font-size: 0.75rem; color: #94a3b8; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 8px; line-height: 1.4;">
+            <span>ℹ️ <em>Affiliate Disclosure: Setay Labs may earn a commission on qualifying purchases made through hardware links at zero additional cost to you. Equipment recommendations are 100% mathematical and uninfluenced by sponsors.</em></span>
+          </div>
         </div>
 
         <!-- Actions -->
@@ -1129,8 +1132,56 @@
     // Safe Numeric Parsing
     function safeNum(val, fallback) {
       var n = parseFloat(val);
-      return (isNaN(n) || n < 0) ? (fallback || 0) : n;
+      return (isNaN(n) || !isFinite(n) || n < 0) ? (fallback !== undefined ? fallback : 0) : n;
     }
+
+    // Layer 1: Pure Calculation Engine exposed for automated verification & unit testing
+    function computeSolarSizing(inputs) {
+      var inp = inputs || {};
+      var loadList = Array.isArray(inp.loads) ? inp.loads : initialLoads;
+      var totalRawWh = 0;
+      loadList.forEach(function(item) {
+        totalRawWh += safeNum(item && item.watts, 0) * safeNum(item && item.hours, 0);
+      });
+
+      var invEffPercent = safeNum(inp.inverterEfficiency !== undefined ? inp.inverterEfficiency : 85, 85);
+      var invEff = Math.max(0.5, Math.min(1.0, invEffPercent / 100));
+      var totalAdjustedWh = totalRawWh > 0 ? (totalRawWh / invEff) : 0;
+
+      var autonomy = Math.max(0.5, safeNum(inp.daysOfAutonomy !== undefined ? inp.daysOfAutonomy : 1.0, 1.0));
+      var usableWhNeeded = totalAdjustedWh * autonomy;
+
+      var dodRaw = inp.dod !== undefined ? safeNum(inp.dod, 0.85) : 0.85;
+      var dodValue = Math.max(0.1, Math.min(1.0, dodRaw > 1 ? (dodRaw / 100) : dodRaw));
+
+      var totalNominalWh = dodValue > 0 ? (usableWhNeeded / dodValue) : 0;
+      var nominalKwh = totalNominalWh / 1000;
+
+      var voltage = Math.max(12, safeNum(inp.systemVoltage !== undefined ? inp.systemVoltage : 12, 12));
+      var batteryAh = voltage > 0 ? Math.ceil(totalNominalWh / voltage) : 0;
+
+      var sunHrs = Math.max(1.0, safeNum(inp.sunHours !== undefined ? inp.sunHours : 4.5, 4.5));
+      var deratePercent = safeNum(inp.solarDerate !== undefined ? inp.solarDerate : 80, 80);
+      var derate = Math.max(0.4, Math.min(1.0, deratePercent / 100));
+
+      var minSolarWatts = Math.ceil(totalAdjustedWh / (sunHrs * derate));
+      var mpptAmps = Math.ceil((minSolarWatts / voltage) * 1.25);
+
+      return {
+        totalRawWh: totalRawWh,
+        totalAdjustedWh: totalAdjustedWh,
+        usableWhNeeded: usableWhNeeded,
+        totalNominalWh: totalNominalWh,
+        nominalKwh: nominalKwh,
+        batteryAh: batteryAh,
+        minSolarWatts: minSolarWatts,
+        mpptAmps: mpptAmps
+      };
+    }
+
+    window.calcEngine = {
+      calculate: computeSolarSizing
+    };
 
     // Render Appliance Table
     function renderApplianceTable() {

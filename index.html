@@ -890,6 +890,39 @@
       }
     }
 
+
+    .affiliate-links-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 12px 0 6px 0;
+    }
+    @media (max-width: 480px) {
+      .affiliate-links-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .affiliate-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      text-decoration: none;
+      transition: all 0.15s ease-in-out;
+    }
+    .affiliate-link-btn:hover {
+      background: rgba(2, 132, 199, 0.2);
+      border-color: #38bdf8;
+      color: #38bdf8;
+      transform: translateY(-1px);
+    }
+
 </style>
 </head>
 <body>
@@ -1108,6 +1141,20 @@
         <div class="spec-quote-box">
           <h4>📦 Practical Equipment Sizing Guide</h4>
           <p id="procurementRecommendation">Calculating recommendation...</p>
+          <div class="affiliate-links-grid">
+            <a href="https://www.amazon.com/s?k=12V+LiFePO4+battery+deep+cycle&tag=setaylabs-20" target="_blank" rel="nofollow noopener sponsored" class="affiliate-link-btn" id="linkBatteryMatch">
+              <span>🔋 Match Battery Bank &rarr;</span>
+            </a>
+            <a href="https://www.amazon.com/s?k=monocrystalline+solar+panels+12v+24v&tag=setaylabs-20" target="_blank" rel="nofollow noopener sponsored" class="affiliate-link-btn" id="linkSolarMatch">
+              <span>☀️ Match Solar Panels &rarr;</span>
+            </a>
+            <a href="https://www.amazon.com/s?k=mppt+solar+charge+controller&tag=setaylabs-20" target="_blank" rel="nofollow noopener sponsored" class="affiliate-link-btn" id="linkMpptMatch">
+              <span>⚡ MPPT Controllers &rarr;</span>
+            </a>
+            <a href="https://www.amazon.com/s?k=pure+sine+wave+inverter+12v+24v&tag=setaylabs-20" target="_blank" rel="nofollow noopener sponsored" class="affiliate-link-btn" id="linkInverterMatch">
+              <span>🔌 Pure Sine Inverters &rarr;</span>
+            </a>
+          </div>
           <div class="affiliate-disclosure-note" style="margin-top: 12px; font-size: 0.75rem; color: #94a3b8; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 8px; line-height: 1.4;">
             <span>ℹ️ <em>Affiliate Disclosure: Setay Labs may earn a commission on qualifying purchases made through hardware links at zero additional cost to you. Equipment recommendations are 100% mathematical and uninfluenced by sponsors.</em></span>
           </div>
@@ -1244,6 +1291,10 @@
     var rowNominalWh = document.getElementById('rowNominalWh');
     var rowChargeController = document.getElementById('rowChargeController');
     var procurementRecommendation = document.getElementById('procurementRecommendation');
+    var linkBatteryMatch = document.getElementById('linkBatteryMatch');
+    var linkSolarMatch = document.getElementById('linkSolarMatch');
+    var linkMpptMatch = document.getElementById('linkMpptMatch');
+    var linkInverterMatch = document.getElementById('linkInverterMatch');
     var batteryMeterFill = document.getElementById('batteryMeterFill');
     var solarMeterFill = document.getElementById('solarMeterFill');
     var dockBatteryAh = document.getElementById('dockBatteryAh');
@@ -1499,6 +1550,22 @@
         '<strong>Battery Pack:</strong> ' + batteryMsg + '<br>' +
         '<strong>Solar Array:</strong> ' + solarMsg + ' (' + minSolarWatts.toLocaleString() + 'W total)<br>' +
         '<strong>Charge Controller:</strong> Minimum ' + mpptAmps + ' Amp MPPT controller rated for ' + voltage + 'V.';
+
+      // Dynamic Amazon Affiliate Link Target Matching
+      if (linkBatteryMatch) {
+        var chemQuery = (batteryChemistry.value === '0.85' || batteryChemistry.value === '0.95') ? 'LiFePO4+battery' : 'deep+cycle+battery';
+        linkBatteryMatch.href = 'https://www.amazon.com/s?k=' + voltage + 'V+' + chemQuery + '&tag=setaylabs-20';
+      }
+      if (linkSolarMatch) {
+        var solarQuery = minSolarWatts > 400 ? '400W+solar+panel+rigid' : '200W+solar+panel+monocrystalline';
+        linkSolarMatch.href = 'https://www.amazon.com/s?k=' + solarQuery + '&tag=setaylabs-20';
+      }
+      if (linkMpptMatch) {
+        linkMpptMatch.href = 'https://www.amazon.com/s?k=mppt+solar+charge+controller+' + mpptAmps + 'A&tag=setaylabs-20';
+      }
+      if (linkInverterMatch) {
+        linkInverterMatch.href = 'https://www.amazon.com/s?k=pure+sine+wave+inverter+' + voltage + 'V&tag=setaylabs-20';
+      }
     }
 
     // Event Handlers for Table Inputs

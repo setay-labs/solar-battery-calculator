@@ -991,9 +991,8 @@
           <div class="form-group">
             <label for="batteryChemistry">Battery Chemistry (Usable DoD)</label>
             <div class="segmented-control" role="group" aria-label="Battery Chemistry quick selector" id="chemistryPills">
-              <button type="button" class="segmented-btn active" data-val="lifepo4">LiFePO4 (85%)</button>
-              <button type="button" class="segmented-btn" data-val="agm">AGM (50%)</button>
-              <button type="button" class="segmented-btn" data-val="lead-acid">Lead-Acid (50%)</button>
+              <button type="button" class="segmented-btn active" data-val="0.85">LiFePO4 (85%)</button>
+              <button type="button" class="segmented-btn" data-val="0.50">AGM / Lead-Acid (50%)</button>
               <button type="button" class="segmented-btn" data-val="custom">Custom</button>
             </div>
             <select id="batteryChemistry">
@@ -1591,6 +1590,66 @@
 
     customDodInput.addEventListener('input', calculateSizing);
 
+    // Synchronize Segmented Pill Buttons
+    function syncPillButtons() {
+      if (voltagePills) {
+        var curV = String(systemVoltage.value);
+        var vBtns = voltagePills.querySelectorAll('.segmented-btn');
+        vBtns.forEach(function(b) {
+          if (b.getAttribute('data-val') === curV) {
+            b.classList.add('active');
+          } else {
+            b.classList.remove('active');
+          }
+        });
+      }
+      if (chemistryPills) {
+        var curC = String(batteryChemistry.value);
+        var cBtns = chemistryPills.querySelectorAll('.segmented-btn');
+        cBtns.forEach(function(b) {
+          if (b.getAttribute('data-val') === curC) {
+            b.classList.add('active');
+          } else {
+            b.classList.remove('active');
+          }
+        });
+      }
+    }
+
+    if (voltagePills) {
+      voltagePills.addEventListener('click', function(e) {
+        var btn = e.target.closest('.segmented-btn');
+        if (!btn) return;
+        var val = btn.getAttribute('data-val');
+        if (val) {
+          systemVoltage.value = val;
+          syncPillButtons();
+          calculateSizing();
+        }
+      });
+    }
+
+    if (chemistryPills) {
+      chemistryPills.addEventListener('click', function(e) {
+        var btn = e.target.closest('.segmented-btn');
+        if (!btn) return;
+        var val = btn.getAttribute('data-val');
+        if (val) {
+          batteryChemistry.value = val;
+          if (val === 'custom') {
+            customDodGroup.style.display = 'block';
+          } else {
+            customDodGroup.style.display = 'none';
+          }
+          syncPillButtons();
+          calculateSizing();
+        }
+      });
+    }
+
+    systemVoltage.addEventListener('change', syncPillButtons);
+    batteryChemistry.addEventListener('change', syncPillButtons);
+
     // Reset Defaults
     resetDefaultsBtn.addEventListener('click', function() {
       loads = JSON.parse(JSON.stringify(initialLoads));
@@ -1602,6 +1661,7 @@
       inverterEfficiency.value = "85";
       sunHours.value = "4.5";
       solarDerate.value = "80";
+      syncPillButtons();
       if (window.history && window.history.replaceState) {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
@@ -1804,6 +1864,7 @@
 
     // Initial render
     loadStateFromUrl();
+    syncPillButtons();
     renderApplianceTable();
 
   })();
